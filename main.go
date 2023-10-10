@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
@@ -100,20 +99,21 @@ func run() {
 
 	startTileX, startTileY := int(x)-tilesVertical, int(y)-tilesHorizontal
 
+	mapInstance := Map{
+		Win:             win,
+		MoveOffsetX:     0,
+		MoveOffsetY:     0,
+		prevMoveOffsetX: 0,
+		prevMoveOffsetY: 0,
+		Z:               maptile.Zoom(zoom),
+		startTileX:      startTileX,
+		startTileY:      startTileY,
+	}
+
 	// Initialize the tiles.
 	updateTiles(startTileX, startTileY, int(z), 0, 0)
 
-	movedI := float64(0)
-	var mouseDownVec *pixel.Vec
-	mouseIsDown := false
-	mouseMove := false
-	moveOffsetX, prevMoveOffsetX := float64(0), float64(0)
-	moveOffsetY, prevMoveOffsetY := float64(0), float64(0)
-
 	for !win.Closed() {
-		d := pixel.V(-movedI, 0)
-		_ = d
-
 		imd.Clear()
 		bg.Clear()
 
@@ -136,91 +136,7 @@ func run() {
 		imd.Line(1)
 		// --
 
-		// Handle mouse events.
-		tileLenMoveX := -(math.Round(moveOffsetX/256) + 1)
-		tileLenMoveY := (math.Round(moveOffsetY/256) + 1)
-
-		if win.Pressed(pixelgl.MouseButton1) && !mouseIsDown {
-			v := win.MousePosition()
-			mouseDownVec = &v
-			mouseIsDown = true
-		} else if win.JustReleased(pixelgl.MouseButton1) && mouseIsDown {
-			fmt.Println(win.MousePosition())
-			mouseIsDown = false
-			mouseDownVec = nil
-
-			if mouseMove {
-				fmt.Println(tileLenMoveX, tileLenMoveY, moveOffsetX, moveOffsetY)
-
-				// This makes the center jerk around a bit. The reason is that when the map is refetched, the
-				// center of the map will match the center of the central tile. Which is not where the user
-				// dragged the map to. TODO: Fix this.
-				updateTiles(
-					startTileX+int(tileLenMoveX),
-					startTileY+int(tileLenMoveY),
-					int(z),
-					-(math.Round(moveOffsetX/256)*256 + 256),
-					-(math.Round(moveOffsetY/256)*256 + 256),
-				)
-
-				prevMoveOffsetX = moveOffsetX
-				prevMoveOffsetY = moveOffsetY
-
-				mouseMove = false
-			}
-		} else if mouseIsDown {
-			newPos := win.MousePosition()
-			_ = newPos
-
-			// If the new position is the same as the original, then we have a click.
-			// If it's different than the original position, then we're moving.
-
-			if mouseDownVec.X != newPos.X || mouseDownVec.Y != newPos.Y {
-				moveOffsetX = prevMoveOffsetX + newPos.X - mouseDownVec.X
-				moveOffsetY = prevMoveOffsetY + newPos.Y - mouseDownVec.Y
-
-				if !mouseMove {
-					mouseMove = true
-				}
-			}
-		}
-
-		// Handle the scroll event (for zoom in and out).
-		yScroll := win.MouseScroll().Y
-
-		if yScroll != 0 {
-			zoom += int(yScroll)
-
-			tile := maptile.At([2]float64{lon, lat}, maptile.Zoom(zoom))
-			z, x, y = tile.Z, tile.X, tile.Y
-			_, xf, yf = getTileURL(lat, lon, zoom)
-			xOffset, yOffset = -(256*(xf-float64(x)) - 128), 256*(yf-float64(y))-128
-
-			startTileX, startTileY = int(x)-tilesVertical, int(y)-tilesHorizontal
-
-			updateTiles(
-				startTileX,
-				startTileY,
-				int(z),
-				-(math.Round(moveOffsetX/256)*256 + 256),
-				-(math.Round(moveOffsetY/256)*256 + 256),
-			)
-		}
-		// --
-
-		// Draw all tiles.
-		for j := len(tiles) - 1; j >= 0; j-- {
-			for i := 0; i < len(tiles[j]); i++ {
-				tile := tiles[j][i]
-				X := tile.X + 256 + (xOffset + moveOffsetX)
-				Y := tile.Y - 256 + (yOffset + moveOffsetY)
-				tileVec := pixel.V(X, Y)
-
-				tile.Sprite.Draw(win, pixel.IM.Moved(tileVec.Sub(d)))
-			}
-		}
-		// --
-
+		mapInstance.Update()
 		imd.Draw(win)
 		win.Update()
 	}
