@@ -43,7 +43,7 @@ func (m *Map) Update() {
 			updateTiles(
 				m.startTileX+int(tileLenMoveX),
 				m.startTileY+int(tileLenMoveY),
-				int(m.Z),
+				int(zoom),
 				-(math.Round(m.MoveOffsetX/256)*256 + 256),
 				-(math.Round(m.MoveOffsetY/256)*256 + 256),
 			)
@@ -77,7 +77,7 @@ func (m *Map) Update() {
 		zoom += int(yScroll)
 
 		tile := maptile.At([2]float64{lon, lat}, maptile.Zoom(zoom))
-		z, x, y := tile.Z, tile.X, tile.Y
+		_, x, y := tile.Z, tile.X, tile.Y
 		_, xf, yf := getTileURL(lat, lon, zoom)
 		m.XOffset, m.YOffset = -(256*(xf-float64(x)) - 128), 256*(yf-float64(y))-128
 
@@ -86,7 +86,7 @@ func (m *Map) Update() {
 		updateTiles(
 			m.startTileX,
 			m.startTileY,
-			int(z),
+			int(zoom),
 			-(math.Round(m.MoveOffsetX/256)*256 + 256),
 			-(math.Round(m.MoveOffsetY/256)*256 + 256),
 		)
@@ -97,11 +97,14 @@ func (m *Map) Update() {
 	for j := len(tiles) - 1; j >= 0; j-- {
 		for i := 0; i < len(tiles[j]); i++ {
 			tile := tiles[j][i]
-			X := tile.X + 256 + (m.XOffset + m.MoveOffsetX)
-			Y := tile.Y - 256 + (m.YOffset + m.MoveOffsetY)
-			tileVec := pixel.V(X, Y)
 
-			tile.Sprite.Draw(m.Win, pixel.IM.Moved(tileVec))
+			if tile != nil {
+				X := tile.X + 256 + (m.XOffset + m.MoveOffsetX)
+				Y := tile.Y - 256 + (m.YOffset + m.MoveOffsetY)
+				tileVec := pixel.V(X, Y)
+
+				tile.Sprite.Draw(m.Win, pixel.IM.Moved(tileVec))
+			}
 		}
 	}
 }

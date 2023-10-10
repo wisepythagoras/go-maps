@@ -54,8 +54,6 @@ func getTileURL(lat, lon float64, zoom int) (uint32, float64, float64) {
 }
 
 func downloadImage(z uint32, x, y float64) (pixel.Picture, error) {
-	// fmt.Println(url)
-
 	imgBytes := tileCache.Get(z, x, y)
 
 	if imgBytes != nil {
@@ -70,6 +68,7 @@ func downloadImage(z uint32, x, y float64) (pixel.Picture, error) {
 	}
 
 	url := fmt.Sprintf(tileTemplate, z, int(x), int(y))
+	fmt.Println(url)
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("User-Agent", USER_AGENT)
