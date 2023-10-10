@@ -19,13 +19,12 @@ func updateTiles(firstX, firstY, z int, startX, startY float64) {
 
 		for i := -1; i < tilesHorizontal*2+2; i++ {
 			x, y := firstX+i, firstY+j
-			url := fmt.Sprintf(tileTemplate, z, x, y)
 
 			// DEBUG
 			// fmt.Println(url)
 			// --
 
-			pic, err := downloadImage(url)
+			pic, err := downloadImage(uint32(z), float64(x), float64(y))
 
 			if err != nil {
 				fmt.Println(err)
@@ -54,8 +53,23 @@ func getTileURL(lat, lon float64, zoom int) (uint32, float64, float64) {
 	return uint32(zoom), xtile, ytile
 }
 
-func downloadImage(url string) (pixel.Picture, error) {
-	fmt.Println(url)
+func downloadImage(z uint32, x, y float64) (pixel.Picture, error) {
+	// fmt.Println(url)
+
+	imgBytes := tileCache.Get(z, x, y)
+
+	if imgBytes != nil {
+		r := bytes.NewReader(imgBytes)
+		img, _, err := image.Decode(r)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return pixel.PictureDataFromImage(img), nil
+	}
+
+	url := fmt.Sprintf(tileTemplate, z, int(x), int(y))
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("User-Agent", USER_AGENT)
@@ -77,8 +91,9 @@ func downloadImage(url string) (pixel.Picture, error) {
 		return nil, err
 	}
 
+	tileCache.Set(z, x, y, body)
 	r := bytes.NewReader(body)
-	img, _, err := image.Decode(r) // response.Body
+	img, _, err := image.Decode(r)
 
 	if err != nil {
 		return nil, err

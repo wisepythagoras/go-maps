@@ -36,6 +36,7 @@ var (
 	lat             float64 = 40.726966
 	zoom            int     = 14
 	loading                 = false
+	tileCache       *TileCache
 )
 
 func main() {
@@ -70,6 +71,9 @@ func main() {
 	tilesHorizontal = ((maxWidth / 2) - (TILE_SIZE / 2)) / TILE_SIZE
 	tilesVertical = ((maxHeight / 2) - (TILE_SIZE / 2)) / TILE_SIZE
 	tiles = make([][]*MapTile, tilesVertical*2+3)
+
+	tileCache = &TileCache{}
+	tileCache.Init()
 
 	pixelgl.Run(run)
 }
