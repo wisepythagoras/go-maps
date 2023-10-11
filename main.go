@@ -20,11 +20,10 @@ const (
 	maxHeight = 768
 	// https://tile.openstreetmap.org/{z}/{x}/{y}.png
 	// tileTemplate = "https://tile.openstreetmap.org/%d/%d/%d.png"
-	// https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}
+	// https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png
 	// https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png
-	tileTemplate = "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png"
-	USER_AGENT   = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0"
-	TILE_SIZE    = 256
+	USER_AGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0"
+	TILE_SIZE  = 256
 )
 
 var (
@@ -37,11 +36,14 @@ var (
 	zoom            int     = 14
 	loading                 = false
 	tileCache       *TileCache
+	tileTemplate    = "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png"
 )
 
 func main() {
 	var coords string
+	var tempTileTemplate string
 	flag.StringVar(&coords, "coords", "", "The coordinates in lon,lat format")
+	flag.StringVar(&tempTileTemplate, "tmpl", "", "The tile url")
 	flag.Parse()
 
 	if len(coords) > 0 {
@@ -66,6 +68,10 @@ func main() {
 			fmt.Println("Error parsing latitude:", err)
 			return
 		}
+	}
+
+	if len(tempTileTemplate) > 0 {
+		tileTemplate = tempTileTemplate
 	}
 
 	tilesHorizontal = ((maxWidth / 2) - (TILE_SIZE / 2)) / TILE_SIZE
@@ -121,7 +127,7 @@ func run() {
 		imd.Clear()
 		bg.Clear()
 
-		bg.Color = colornames.Black
+		bg.Color = colornames.Darkgrey
 		bg.Push(pixel.V(0, 0), pixel.V(maxWidth, maxHeight))
 		bg.Rectangle(0)
 		bg.Draw(win)

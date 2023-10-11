@@ -13,7 +13,8 @@ type TileCache struct {
 }
 
 func (c *TileCache) Init() error {
-	config := bigcache.DefaultConfig(10 * time.Minute)
+	config := bigcache.DefaultConfig(20 * time.Minute)
+	config.MaxEntrySize = 200
 	cache, err := bigcache.New(context.Background(), config)
 
 	if err != nil {
