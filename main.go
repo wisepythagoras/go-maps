@@ -8,9 +8,9 @@ import (
 
 	_ "image/png"
 
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
-	"github.com/faiface/pixel/pixelgl"
+	pixel "github.com/gopxl/pixel/v2"
+	"github.com/gopxl/pixel/v2/imdraw"
+	"github.com/gopxl/pixel/v2/pixelgl"
 	"github.com/paulmach/orb/maptile"
 	"golang.org/x/image/colornames"
 )
@@ -27,14 +27,12 @@ const (
 )
 
 var (
-	// tiles2          [][]*pixel.Sprite
 	tiles           [][]*MapTile
 	tilesHorizontal int
 	tilesVertical   int
 	lon             float64 = -73.994808
 	lat             float64 = 40.726966
 	zoom            int     = 14
-	loading                 = false
 	tileCache       *TileCache
 	tileTemplate    = "https://a.basemaps.cartocdn.com/dark_all/%d/%d/%d.png"
 )
@@ -110,14 +108,11 @@ func run() {
 	startTileX, startTileY := int(x)-tilesVertical, int(y)-tilesHorizontal
 
 	mapInstance := Map{
-		Win:             win,
-		MoveOffsetX:     0,
-		MoveOffsetY:     0,
-		prevMoveOffsetX: 0,
-		prevMoveOffsetY: 0,
-		Z:               maptile.Zoom(zoom),
-		startTileX:      startTileX,
-		startTileY:      startTileY,
+		Win:        win,
+		Center:     [2]float64{lon, lat},
+		Z:          maptile.Zoom(zoom),
+		startTileX: startTileX,
+		startTileY: startTileY,
 	}
 
 	// Initialize the tiles.

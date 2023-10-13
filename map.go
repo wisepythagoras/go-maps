@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/pixelgl"
+	pixel "github.com/gopxl/pixel/v2"
+	"github.com/gopxl/pixel/v2/pixelgl"
 	"github.com/paulmach/orb/maptile"
 )
 
 type Map struct {
 	Win                          *pixelgl.Window
+	Center                       [2]float64
 	MoveOffsetX, prevMoveOffsetX float64
 	MoveOffsetY, prevMoveOffsetY float64
 	XOffset, YOffset             float64
@@ -18,6 +19,32 @@ type Map struct {
 	mouseIsDown, mouseMove       bool
 	startTileX, startTileY       int
 	mouseDownVec                 *pixel.Vec
+}
+
+func (m *Map) LatLonToXY(lon, lat float64) (float64, float64) {
+	C := (256 / (2 * math.Pi)) * math.Pow(2, float64(m.Z))
+
+	x := C * ((lon * (math.Pi / 180)) + math.Pi)
+	y := C * (math.Pi - math.Log(math.Tan((math.Pi/4)+(lat*(math.Pi/180))/2)))
+
+	return x, y
+}
+
+func (m *Map) XYToLatLon(x, y float64) (float64, float64) {
+	xcenter, ycenter := m.LatLonToXY(m.Center[0], m.Center[1])
+
+	xPoint := xcenter - (maxWidth/2 - x)
+	yPoint := ycenter - (maxHeight/2 - y)
+	fmt.Println(xPoint, yPoint)
+
+	C := (256 / (2 * math.Pi)) * math.Pow(2, float64(m.Z))
+	M := (xPoint / C) - math.Pi
+	N := -(yPoint / C) + math.Pi
+
+	lonPoint := M * (180 / math.Pi)
+	latPoint := ((math.Atan(math.Pow(math.E, N)) - (math.Pi / 4)) * 2) * (180 / math.Pi)
+
+	return lonPoint, latPoint
 }
 
 func (m *Map) Update() {
@@ -35,11 +62,6 @@ func (m *Map) Update() {
 		m.mouseDownVec = nil
 
 		if m.mouseMove {
-			fmt.Println(tileLenMoveX, tileLenMoveY, m.MoveOffsetX, m.MoveOffsetY)
-
-			// This makes the center jerk around a bit. The reason is that when the map is refetched, the
-			// center of the map will match the center of the central tile. Which is not where the user
-			// dragged the map to. TODO: Fix this.
 			updateTiles(
 				m.startTileX+int(tileLenMoveX),
 				m.startTileY+int(tileLenMoveY),
@@ -52,6 +74,10 @@ func (m *Map) Update() {
 			m.prevMoveOffsetY = m.MoveOffsetY
 
 			m.mouseMove = false
+		} else {
+			posVec := m.Win.MousePosition()
+			lon, lat := m.XYToLatLon(posVec.X, maxHeight-posVec.Y)
+			fmt.Println(lat, lon)
 		}
 	} else if m.mouseIsDown {
 		newPos := m.Win.MousePosition()

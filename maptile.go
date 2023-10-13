@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/faiface/pixel"
+	"github.com/gopxl/pixel/v2"
 )
 
 type MapTile struct {

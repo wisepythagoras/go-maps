@@ -8,37 +8,31 @@ import (
 	"math"
 	"net/http"
 
-	"github.com/faiface/pixel"
+	pixel "github.com/gopxl/pixel/v2"
 )
 
 func updateTiles(firstX, firstY, z int, startX, startY float64) {
-	loading = true
-
 	for j := -1; j < tilesVertical*2+2; j++ {
 		tiles[j+1] = make([]*MapTile, tilesHorizontal*2+3)
 
 		for i := -1; i < tilesHorizontal*2+2; i++ {
 			x, y := firstX+i, firstY+j
 
-			// DEBUG
-			// fmt.Println(url)
-			// --
+			go func(i, j int) {
+				pic, err := downloadImage(uint32(z), float64(x), float64(y))
 
-			pic, err := downloadImage(uint32(z), float64(x), float64(y))
-
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				tiles[j+1][i+1] = &MapTile{
-					X:      startX + float64(256*i) + (256 / 2),
-					Y:      startY + float64(256*(len(tiles)-1-j)) + (256 / 2),
-					Sprite: pixel.NewSprite(pic, pixel.R(0, 0, TILE_SIZE, TILE_SIZE)),
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					tiles[j+1][i+1] = &MapTile{
+						X:      startX + float64(256*i) + (256 / 2),
+						Y:      startY + float64(256*(len(tiles)-1-j)) + (256 / 2),
+						Sprite: pixel.NewSprite(pic, pixel.R(0, 0, TILE_SIZE, TILE_SIZE)),
+					}
 				}
-			}
+			}(i, j)
 		}
 	}
-
-	loading = false
 }
 
 func deg2rad(d float64) float64 {
